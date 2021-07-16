@@ -1,5 +1,5 @@
 {
-  "name": "lireddit-server",
+  "name": "myreddit-server",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -11,15 +11,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sanjayk1801/lireddit-server.git"
+    "url": "git+https://github.com/sanjayk1801/myreddit-server.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/sanjayk1801/lireddit-server/issues"
+    "url": "https://github.com/sanjayk1801/myreddit-server/issues"
   },
-  "homepage": "https://github.com/sanjayk1801/lireddit-server#readme",
+  "homepage": "https://github.com/sanjayk1801/myreddit-server#readme",
   "devDependencies": {
     "@types/express": "^4.17.13",
     "@types/node": "^16.3.1",

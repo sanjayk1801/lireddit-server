@@ -11,7 +11,7 @@ export default {
         },
         entities: [Post, User],
         type: 'postgresql',
-        dbName: 'liredditdb',
+        dbName: 'myredditdb',
         user: 'admin',
         password: '1801',
         debug: !__prod__,

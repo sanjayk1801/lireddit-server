@@ -1,1 +1,1 @@
-# lireddit-server
+# myreddit-server
