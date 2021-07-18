@@ -1,18 +1,18 @@
 import { Post } from "../entities/Post";
-import { MyContext } from "../types";
+import { Context } from "../types/Context";
 import { Resolver, Query, Ctx, Arg, Mutation } from "type-graphql";
 
 @Resolver(Post)
 export class PostResolver {
     @Query(() => [Post])
-    posts(@Ctx() {em}: MyContext): Promise<Post[]>{
+    posts(@Ctx() {em}: Context): Promise<Post[]>{
         return em.find(Post, {});
     }
 
     @Query(() => Post, {nullable: true})
     post(
         @Arg('id') id: number,
-        @Ctx() {em}: MyContext
+        @Ctx() {em}: Context
     ): Promise<Post | null>{
         return em.findOne(Post, {id});
     }
@@ -20,7 +20,7 @@ export class PostResolver {
     @Mutation(() => Post)
     async createPost(
         @Arg('title') title: String,
-        @Ctx() {em}: MyContext
+        @Ctx() {em}: Context
     ): Promise<Post>{
 
         const post = em.create(Post, {title});
@@ -32,7 +32,7 @@ export class PostResolver {
     async updatePost(
         @Arg('id') id: number,
         @Arg('title') title: string,
-        @Ctx() {em}: MyContext
+        @Ctx() {em}: Context
     ): Promise<Post | null>{
         const post = await em.findOne(Post, { id });
         if (!post) {
@@ -48,7 +48,7 @@ export class PostResolver {
     @Mutation(() => Boolean)
     async deletePost(
         @Arg('id') id: number,
-        @Ctx() {em}: MyContext
+        @Ctx() {em}: Context
     ): Promise<boolean>{
         await em.nativeDelete(Post, { id });
         return true;

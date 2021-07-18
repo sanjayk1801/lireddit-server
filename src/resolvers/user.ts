@@ -1,4 +1,4 @@
-import { MyContext } from "../types";
+import { Context } from "../types/Context";
 import { Resolver, Ctx, Arg, Mutation, Field, ObjectType, InputType } from "type-graphql";
 import { User } from "../entities/User";
 import argon2 from "argon2";
@@ -34,17 +34,17 @@ class UserResponse{
 
 @Resolver(User)
 export class UserResolver {
-    @Mutation(() => User)
+    @Mutation(() => UserResponse)
     async register(
         @Arg("options") options: UserInput,
-        @Ctx() {em}: MyContext
+        @Ctx() {em}: Context
     ): Promise<UserResponse> { 
         const hashedPassword = await argon2.hash(options.password);
         const user = em.create(User, {username: options.username, password: hashedPassword});
         try {
-            em.persistAndFlush(user);
+            await em.persistAndFlush(user);
         } catch (err) {
-            if(err.code == '23505'){
+            if(err.code === '23505'){
                 return {
                     errors: [{
                         field: 'username', 
@@ -59,7 +59,7 @@ export class UserResolver {
     @Mutation(() => UserResponse)
     async login(
         @Arg("options") options: UserInput,
-        @Ctx() {em}: MyContext
+        @Ctx() {em, req} : Context
     ): Promise<UserResponse>{
         const user = await em.findOne(User, {username: options.username})
         if (!user){
@@ -70,7 +70,7 @@ export class UserResolver {
                 ]
             }
         }
-        const isPasswordValid = argon2.verify(user.password, options.password)
+        const isPasswordValid = await argon2.verify(user.password, options.password)
         if(!isPasswordValid){
             return {
                 errors: [{
@@ -79,6 +79,8 @@ export class UserResolver {
                 ]
             }
         }
+
+        req.session.userId = user.id;
         return { user }  
     }
 }

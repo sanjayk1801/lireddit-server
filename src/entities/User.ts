@@ -22,5 +22,4 @@ export class User {
     @Field()
     @Property({ type: 'date', onUpdate: () => new Date() })
     updatedAt: Date = new Date();
- 
 }
