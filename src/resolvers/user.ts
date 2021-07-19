@@ -1,7 +1,9 @@
 import { Context } from "../types/Context";
-import { Resolver, Ctx, Arg, Mutation, Field, ObjectType, InputType } from "type-graphql";
+import { Resolver, Ctx, Arg, Mutation, Field, ObjectType, InputType, Query } from "type-graphql";
 import { User } from "../entities/User";
 import argon2 from "argon2";
+import { resolve } from "path/posix";
+import { COOKIE_NAME } from "src/constants";
 
 @InputType()
 class UserInput{
@@ -34,10 +36,26 @@ class UserResponse{
 
 @Resolver(User)
 export class UserResolver {
+
+    @Query(() => User, {nullable: true})
+    async me(
+        @Ctx() {em, req}: Context){
+        // console.log("me": req.session)
+        const userId = req.session.userId;
+        console.log(userId);
+        // not logged in
+        if (!userId){
+            return null
+        }
+        // getting current user details
+        const user = await em.findOne(User, {id: userId})
+        return user
+    }
+    
     @Mutation(() => UserResponse)
     async register(
         @Arg("options") options: UserInput,
-        @Ctx() {em}: Context
+        @Ctx() {em, req}: Context
     ): Promise<UserResponse> { 
         const hashedPassword = await argon2.hash(options.password);
         const user = em.create(User, {username: options.username, password: hashedPassword});
@@ -53,6 +71,7 @@ export class UserResolver {
                 }
             }
         }
+        req.session.userId = user.id;
         return { user }   
     }
 
@@ -81,6 +100,24 @@ export class UserResolver {
         }
 
         req.session.userId = user.id;
+        console.log(req.session);
+        
         return { user }  
     }
+
+    @Mutation(() => Boolean)
+    async logout(
+         @Ctx() {req, res} : Context
+    ): Promise<Boolean>{
+        res.clearCookie(COOKIE_NAME);
+        return new Promise(resolve => req.session.destroy(err => {
+            if(err) {
+                resolve(false)
+                return
+            }
+            resolve(true)
+        }) ) 
+    }
+
+
 }

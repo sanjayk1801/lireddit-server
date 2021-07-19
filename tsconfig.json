@@ -5,6 +5,7 @@
     "lib": [
       "es2020"
     ],
+    "skipDefaultLibCheck": true,
     "skipLibCheck": true,
     "sourceMap": true,
     "outDir": "./dist",
