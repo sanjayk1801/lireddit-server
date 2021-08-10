@@ -22,7 +22,8 @@ const main = async () => {
     password: '1801',
     logging: true,
     synchronize: true,
-    entities: [ User, Post]
+    entities: [User, Post]
+    
   });
 
   const RedisStore = connectRedis(session);
