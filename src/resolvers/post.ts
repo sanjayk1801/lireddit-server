@@ -1,51 +1,76 @@
 import { Post } from "../entities/Post";
-import { Resolver, Query, Arg, Mutation } from "type-graphql";
+import {
+	Resolver,
+	Query,
+	Arg,
+	Mutation,
+	Authorized,
+	Ctx,
+	FieldResolver,
+	Root,
+} from "type-graphql";
+import { Context } from "../types/Context";
+import { User } from "../entities/User";
 
 @Resolver(Post)
 export class PostResolver {
-    @Query(() => [Post])
-    posts(): Promise<Post[]>{
-        return Post.find();
-    }
+	@FieldResolver(() => String)
+	bodySnippet(@Root() post: Post) {
+		return post.body.slice(0, 50);
+	}
 
-    @Query(() => Post, {nullable: true})
-    post(
-        @Arg('id') id: number,
-    ): Promise<Post | undefined>{
-        return Post.findOne(id);
-    }
+	@Query(() => [Post])
+	async posts(): Promise<Post[]> {
+		const post = await Post.find({ relations: ["user"] });
+		return post;
+	}
 
-    @Mutation(() => Post)
-    async createPost(
-        @Arg('title') title: string
-    ): Promise<Post>{
-        const post =  Post.create({title: title})
-        await post.save()
-        return post;
-    }
+	@Query(() => Post, { nullable: true })
+	post(@Arg("id") id: number): Promise<Post | undefined> {
+		return Post.findOne(id);
+	}
 
-    @Mutation(() => Post, {nullable: true})
-    async updatePost(
-        @Arg('id') id: number,
-        @Arg('title') title: string
-    ): Promise<Post | null>{
-        const post = await Post.findOne(id);
-        if (!post) {
-            return null;
-        } 
-        if(typeof post !== 'undefined'){
-            post.title = title;
-        }
-        await post.save();
-        return post;
-    }
+	@Authorized()
+	@Mutation(() => Post)
+	async createPost(
+		@Ctx() { req }: Context,
+		@Arg("title") title: string,
+		@Arg("body") body: string
+	): Promise<Post> {
+		const user = await User.findOne(req.session.userId);
+		const post = Post.create({ title: title, body: body });
+		if (user !== undefined) {
+			post.user = user;
+		}
+		await post.save();
+		return post;
+	}
 
-    @Mutation(() => Boolean)
-    async deletePost(
-        @Arg('id') id: number
-    ): Promise<boolean>{
-        await Post.delete(id);
-        return true;
-    }
+	@Authorized()
+	@Mutation(() => Post, { nullable: true })
+	async updatePost(
+		@Arg("id") id: number,
+		@Arg("title") title: string,
+		@Arg("body") body: string
+	): Promise<Post | null> {
+		const post = await Post.findOne(id);
+		if (!post) {
+			return null;
+		}
+		if (typeof post !== "undefined") {
+			post.title = title;
+			post.body = body;
+		}
+
+		await post.save();
+		return post;
+	}
+
+	@Authorized()
+	@Mutation(() => Boolean)
+	async deletePost(@Arg("id") id: number): Promise<boolean> {
+		await Post.delete(id);
+		return true;
+	}
 }
 

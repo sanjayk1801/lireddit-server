@@ -13,6 +13,7 @@ import cors from "cors";
 import { createConnection } from "typeorm";
 import { User } from "./entities/User";
 import { Post } from "./entities/Post";
+import { customAuthChecker } from "./utils/authChecker";
 
 const main = async () => {
   await createConnection({
@@ -61,6 +62,7 @@ const main = async () => {
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
       resolvers: [PostResolver, UserResolver],
+      authChecker: customAuthChecker,
       validate: false,
     }),
     context: ({ req, res }): Context => ({ req, res , redis}),
