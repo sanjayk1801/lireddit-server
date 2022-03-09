@@ -1,5 +1,5 @@
 import { Context } from "../types/Context";
-import { Resolver, Ctx, Arg, Mutation, Query } from "type-graphql";
+import { Resolver, Ctx, Arg, Mutation, Query, Authorized } from "type-graphql";
 import { User } from "../entities/User";
 import argon2 from "argon2";
 import { COOKIE_NAME, FORGOT_PASSWORD_PREFIX } from "../constants";
@@ -9,20 +9,31 @@ import { sendEmail } from "../utils/sendEmail";
 import { UserLoginInput } from "../types/graphql/UserLoginInput";
 import { UserResponse } from "../types/graphql/UserResponse";
 import { UserRegisterInput } from "../types/graphql/UserRegisterInput";
+import _ from "lodash";
+import { Topic } from "../entities/Topic";
 
 @Resolver(User)
 export class UserResolver {
 	@Query(() => User, { nullable: true })
-	async me(@Ctx() { req }: Context) {
+	async me(@Ctx() { req }: Context): Promise<User | null | undefined> {
 		const userId = req.session.userId;
 		// not logged in
 		if (!userId) {
 			return null;
 		}
 		// getting current user details
-		const user = await User.findOne(userId);
+		const user = await User.findOne(userId, {
+			relations: ["following", "topics"],
+		});
 		return user;
 	}
+
+	// @Query(() => [User])
+	// async usersToFollow(
+	// 	@Ctx() { req }: Context
+	// ): Promise<User[] | undefined | null>{
+	// 	const following = User.
+	// }
 
 	@Mutation(() => UserResponse)
 	async register(
@@ -178,5 +189,51 @@ export class UserResolver {
 		redis.del(FORGOT_PASSWORD_PREFIX + token);
 
 		return { user };
+	}
+
+	@Authorized()
+	@Mutation(() => Boolean)
+	async toggleFollowingUser(
+		@Arg("userId") userId: number,
+		@Ctx() { req }: Context
+	): Promise<Boolean> {
+		const user_to_follow = await User.findOne(userId);
+		if (!user_to_follow) return false;
+
+		const user = await User.findOne(req.session.userId, {
+			relations: ["following"],
+		});
+		if (!user) return false;
+		console.log(user);
+		if (!_.find(user.following, { id: userId })) {
+			user.following.push(user_to_follow);
+		} else {
+			_.remove(user.following, { id: userId });
+		}
+		await user.save();
+		return true;
+	}
+
+	@Authorized()
+	@Mutation(() => Boolean)
+	async toggleFollowingTopic(
+		@Arg("topicId") topicId: number,
+		@Ctx() { req }: Context
+	): Promise<Boolean> {
+		const topic_to_follow = await Topic.findOne(topicId);
+		if (!topic_to_follow) return false;
+
+		const user = await User.findOne(req.session.userId, {
+			relations: ["topics"],
+		});
+		if (!user) return false;
+		console.log(user);
+		if (!_.find(user.topics, { id: topicId })) {
+			user.topics.push(topic_to_follow);
+		} else {
+			_.remove(user.topics, { id: topicId });
+		}
+		await user.save();
+		return true;
 	}
 }

@@ -7,7 +7,10 @@ import {
 	PrimaryGeneratedColumn,
 	BaseEntity,
 	ManyToOne,
+	ManyToMany,
+	JoinTable,
 } from "typeorm";
+import { Topic } from "./Topic";
 import { User } from "./User";
 
 @ObjectType()
@@ -34,6 +37,15 @@ export class Post extends BaseEntity {
 	body: string;
 
 	@Field()
+	@Column({ default: 0 })
+	likes: number	
+
+	@Field()
 	@ManyToOne(() => User, (user) => user.posts, { nullable: false })
 	user: User;
+
+	@Field(() => [Topic])
+	@ManyToMany(() => Topic)
+	@JoinTable()
+	topic: Topic[];
 }

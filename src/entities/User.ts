@@ -7,8 +7,11 @@ import {
 	PrimaryGeneratedColumn,
 	BaseEntity,
 	OneToMany,
+	ManyToMany,
+	JoinTable,
 } from "typeorm";
 import { Post } from "./Post";
+import { Topic } from "./Topic";
 
 @ObjectType()
 @Entity()
@@ -39,4 +42,24 @@ export class User extends BaseEntity {
 	@Field(() => [Post])
 	@OneToMany(() => Post, (post) => post.user)
 	posts: Post[];
+
+	@Field(() => [Post])
+	@ManyToMany(() => Post, { cascade: true })
+	@JoinTable()
+	bookmarked_posts: Post[];
+
+	@Field(() => [Post])
+	@ManyToMany(() => Post, { cascade: true })
+	@JoinTable()
+	liked_posts: Post[];
+
+	@Field(() => [User])
+	@ManyToMany(() => User)
+	@JoinTable()
+	following: User[];
+
+	@Field(() => [Topic])
+	@ManyToMany(() => Topic)
+	@JoinTable()
+	topics: Topic[];
 }
